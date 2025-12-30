@@ -1,0 +1,27 @@
+# ==============================
+# Core Web Application
+# ==============================
+streamlit>=1.30.0
+
+# ==============================
+# OpenAI API (Interview Intelligence)
+# ==============================
+openai>=1.0.0
+python-dotenv>=1.0.0
+
+# ==============================
+# Audio Processing (Voice Input)
+# ==============================
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.13
+
+# ==============================
+# Computer Vision (Facial / Body Language Analysis)
+# ==============================
+opencv-python>=4.9.0
+mediapipe>=0.10.0
+
+# ==============================
+# Numerical / Utility Libraries
+# ==============================
+numpy>=1.23.0
