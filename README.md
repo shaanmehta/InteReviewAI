@@ -14,6 +14,7 @@ Mock interviewer that simulates job interviews and provides feedback/scoring.
 - Optional camera/vision analysis
 
 ## Getting started
-1. Install dependencies (requirements.txt)
-2. Create .env file containing OpenAPI key 
-3. In the project root, "streamlit run app.py"
+1. Clone the repository (git clone https://github.com/shaanmehta/AI-Mock-Interviewer.git)
+2. Install dependencies (requirements.txt)
+3. Create .env file containing OpenAPI key 
+4. In the project root, "streamlit run app.py"
