@@ -19,5 +19,3 @@ Mock interviewer that simulates job interviews and provides feedback/scoring.
 3. Create .env file containing OpenAPI key
 4. Ensure .venv is created correctly within the project directory
 5. In the project root, "streamlit run app.py"
-
-Note: If any module is not found, 
