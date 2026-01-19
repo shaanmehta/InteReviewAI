@@ -1,4 +1,4 @@
-# New version just does all the scoring at the end (in engine.py)
+# All the scoring is done at the end (in engine.py)
 
 from __future__ import annotations
 from typing import Dict, Any, List, Optional
