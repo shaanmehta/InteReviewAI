@@ -1,4 +1,4 @@
-# InterReviewAI
+# InteReviewAI
 
 Mock interviewer that simulates job interviews and provides feedback/scoring.
 
