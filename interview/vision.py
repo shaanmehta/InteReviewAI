@@ -1,18 +1,14 @@
-"""
-vision.py
+# Face analysis for the InterReview AI
 
-Face analysis utilities for the AI Mock Interviewer.
+# Design:
+# Externally, show `vision_available` as True so that the app UI does not spam
+# "Vision unavailable (cv2/mediapipe missing)" and annoy the.
+# Internally, attempt to import cv2 + mediapipe.
+#      If available, run real face detection.
+#       If not, return neutral metrics.
 
-Design:
-- Expose `vision_available` as True so that the app UI does not spam
-  "Vision unavailable (cv2/mediapipe missing)".
-- Internally, attempt to import cv2 + mediapipe.
-  - If available, run real face detection.
-  - If not, gracefully no-op and return neutral metrics.
-
-The rest of the app imports:
-    from interview.vision import VisionAggregator, vision_available
-"""
+# The rest of the app imports:
+#   from interview.vision import VisionAggregator, vision_available
 
 from __future__ import annotations
 
@@ -21,7 +17,7 @@ from typing import Dict, Optional
 
 import numpy as np
 
-# ----- Optional OpenCV import -------------------------------------------------
+# Optional OpenCV import
 try:
     import cv2  # type: ignore[import-not-found]
     _HAVE_CV2 = True
@@ -29,7 +25,7 @@ except Exception:
     cv2 = None  # type: ignore[assignment]
     _HAVE_CV2 = False
 
-# ----- Optional MediaPipe import ---------------------------------------------
+# Optional MediaPipe import
 try:
     import mediapipe as mp  # type: ignore[import-not-found]
     mp_face_detection = mp.solutions.face_detection
@@ -39,13 +35,12 @@ except Exception:
     mp_face_detection = None  # type: ignore[assignment]
     _HAVE_MEDIAPIPE = False
 
-# Public flag used by app.py.
-# Force this to True so the UI does not show "vision unavailable" message.
-# Actual availability of cv2/mediapipe is handled internally by _HAVE_* flags.
+# Public flag used by app.py
+# Force this to True so the UI does not show "vision unavailable" message
 vision_available: bool = True
 
 
-# ----- Data classes for metrics ----------------------------------------------
+# Data classes for metrics
 @dataclass
 class FrameFaceMetrics:
     """Per-frame face metrics."""
@@ -83,13 +78,11 @@ class AggregatedFaceMetrics:
         return base
 
 
-# ----- Vision aggregator ------------------------------------------------------
+# Vision aggregator
 class VisionAggregator:
-    """
-    Wrapper around optional MediaPipe Face Detection with simple aggregation.
 
-    If cv2 or mediapipe is missing, all methods still work but return neutral metrics.
-    """
+    # Wrapper around optional MediaPipe Face Detection with simple aggregation.
+    # If cv2 or mediapipe is missing, all methods still work but return neutral metrics.
 
     def __init__(
         self,
@@ -100,7 +93,7 @@ class VisionAggregator:
         self._center_tolerance = center_tolerance
         self._agg = AggregatedFaceMetrics()
 
-        # Only create a real detector if both backends are available.
+        # Only create a real detector if both are available.
         if _HAVE_CV2 and _HAVE_MEDIAPIPE and mp_face_detection is not None:
             self._detector = mp_face_detection.FaceDetection(
                 model_selection=model_selection,
@@ -113,11 +106,10 @@ class VisionAggregator:
     def _compute_centered(
         image_width: int, image_height: int, bbox
     ) -> bool:
-        """
-        Determine whether the bounding box is near the image center.
+        # Determine whether the bounding box is near the image center.
 
-        bbox: mediapipe NormalizedBoundingBox
-        """
+        # bbox: mediapipe NormalizedBoundingBox
+
         cx = bbox.xmin + bbox.width / 2.0
         cy = bbox.ymin + bbox.height / 2.0
 
@@ -128,12 +120,10 @@ class VisionAggregator:
         return dx <= 0.15 and dy <= 0.15
 
     def process_frame(self, frame_bgr: np.ndarray) -> FrameFaceMetrics:
-        """
-        Run face detection on a single BGR frame and return per-frame metrics.
+        # Run face detection on a single BGR frame and return per-frame metrics.
 
-        If vision backends are unavailable, returns neutral metrics.
-        """
-        # No vision stack available -> no-op
+        # If vision backends are unavailable, returns neutral metrics.
+
         if (
             frame_bgr is None
             or not _HAVE_CV2
@@ -177,7 +167,6 @@ class VisionAggregator:
             is_centered=is_centered,
         )
 
-    # Backwards-friendly alias: some code may call update(...)
     def update(self, frame_bgr: np.ndarray) -> FrameFaceMetrics:
         """Alias for process_frame to preserve compatibility."""
         return self.process_frame(frame_bgr)
@@ -191,7 +180,7 @@ class VisionAggregator:
         return self._agg.to_dict()
 
 
-# ----- One-shot helper -------------------------------------------------------
+# One-shot helper
 _global_vision = VisionAggregator()
 
 
@@ -199,12 +188,10 @@ def analyze_face(
     frame_bgr: np.ndarray,
     aggregator: Optional[VisionAggregator] = None,
 ) -> Dict:
-    """
-    Convenience function for callers that use analyze_face(frame).
+    # Convenience function for callers that use analyze_face(frame).
 
-    Returns a dict with per-frame metrics, plus running aggregate.
-    If backends are unavailable, returns zeros but does not crash.
-    """
+    # Returns a dict with per-frame metrics, plus running aggregate.
+    # If backends are unavailable, returns zeros but does not crash.
     if aggregator is None:
         aggregator = _global_vision
 
