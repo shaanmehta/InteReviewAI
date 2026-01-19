@@ -1,12 +1,4 @@
-"""
-Streamlit AI Mock Interview Robot (web app phase)
-
-Hard fixes:
-- STT is start/stop per question (no live transcript / no autorefresh)
-- Mic capture uses streamlit_mic_recorder (browser recorder)
-- No runaway memory: cap stored audio per answer
-- Camera remains separate & stable
-"""
+# InteReview AI
 
 from __future__ import annotations
 
@@ -37,9 +29,8 @@ from interview.engine import (
 from interview.vision import VisionAggregator, vision_available
 
 
-# --------------------------
-# Constants (tune once)
-# --------------------------
+
+# Constants
 SR = 16000
 SAMPLE_WIDTH = 2  # int16
 BYTES_PER_SEC = SR * SAMPLE_WIDTH
@@ -49,7 +40,7 @@ RTC_CONFIG = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
 
-# (Legacy constants retained; no live transcript used anymore)
+# Legacy cosntants
 CHUNK_SECONDS = 2.0
 OVERLAP_SECONDS = 0.5
 CHUNK_BYTES = int(BYTES_PER_SEC * CHUNK_SECONDS)
@@ -59,9 +50,7 @@ MAX_ANSWER_SECONDS = 90
 MAX_ANSWER_BYTES = BYTES_PER_SEC * MAX_ANSWER_SECONDS
 
 
-# --------------------------
 # Helpers
-# --------------------------
 def _jsonable(x: Any) -> Any:
     try:
         import numpy as _np
@@ -96,9 +85,7 @@ def pill(label: str, value: str) -> None:
     )
 
 
-# --------------------------
 # Video processor (camera)
-# --------------------------
 class SimpleVideoProcessor(VideoProcessorBase):
     def __init__(self) -> None:
         self._latest = None
@@ -112,17 +99,15 @@ class SimpleVideoProcessor(VideoProcessorBase):
         return self._latest
 
 
-# --------------------------
 # State init
-# --------------------------
 def init_state() -> None:
     ss = st.session_state
-    ss.setdefault("stage", "setup")  # setup | media | question | finished
+    ss.setdefault("stage", "setup")  # setup, media, question, finished
     ss.setdefault("profile", {})
     ss.setdefault("question_idx", 0)
     ss.setdefault("current_question", "")
     ss.setdefault("qa", [])
-    ss.setdefault("stt_nonce", {})  # per-question reset counter for mic component
+    ss.setdefault("stt_nonce", {})  # Reset counter per question for mic component
 
     ss.setdefault("vision", VisionAggregator())
     ss.setdefault("final_result", None)
@@ -130,7 +115,7 @@ def init_state() -> None:
     ss.setdefault("tts_cache", {})
     ss.setdefault("audio_enabled", False)
 
-    # NEW: media + timer state
+    # Mdia + timer state
     ss.setdefault("media_mode", None)          # "mic" or "mic+face"
     ss.setdefault("timer_seconds", 30)         # 30 or 60
     ss.setdefault("timer_start", None)         # float timestamp
@@ -146,7 +131,7 @@ init_state()
 # --------------------------
 def render_setup() -> None:
     st.title("🤖 Mock Interview Robot")
-    st.caption("Voice + camera interview practice with employer-style feedback.")
+    st.caption("Mic + Camera interview practice with employer-style feedback.")
 
     c1, c2 = st.columns([1.25, 1], gap="large")
     with c1:
@@ -204,9 +189,7 @@ def render_setup() -> None:
             st.rerun()
 
 
-# --------------------------
 # Media setup page
-# --------------------------
 def render_media_setup() -> None:
     ss = st.session_state
 
@@ -222,7 +205,7 @@ def render_media_setup() -> None:
     if media_choice == "Microphone only":
         ss.media_mode = "mic"
     elif media_choice == "Microphone + Camera":
-        ss.media_mode = "mic+face"
+        ss.media_mode = "mic+cam"
 
     timer_label = st.radio(
         "Answer time limit per question:",
@@ -234,7 +217,7 @@ def render_media_setup() -> None:
 
     st.caption(
         "Your microphone (and camera, if selected) will be used during each question. "
-        "Please allow browser permissions when prompted."
+        "Please allow browser permissions if/when prompted."
     )
 
     if st.button("Start Interview", type="primary", use_container_width=True):
@@ -250,10 +233,7 @@ def render_media_setup() -> None:
         ss.stage = "question"
         st.rerun()
 
-
-# --------------------------
-# Submit helper (reused by button + timer)
-# --------------------------
+# Submit helper that is reused by the button + timer
 def submit_current_answer() -> None:
     ss = st.session_state
 
@@ -268,7 +248,8 @@ def submit_current_answer() -> None:
         st.error("No transcript captured yet. Click Start, speak, then click Stop.")
         return
 
-    # Keep a lightweight "voice" payload for downstream scoring (no raw audio stored).
+    # Keep a lightweight "voice" payload for downstream scoring 
+    # Note: Do not store audio
     voice_stats = {
         "stt_engine": "streamlit_mic_recorder",
         "words": int(len(answer_text.split())),
@@ -304,10 +285,7 @@ def submit_current_answer() -> None:
     )
     st.rerun()
 
-
-# --------------------------
 # Interview page
-# --------------------------
 def render_question() -> None:
     profile = st.session_state.profile
     q_idx = st.session_state.question_idx
@@ -396,7 +374,7 @@ def render_question() -> None:
         if not (st.session_state.get(answer_key) or "").strip():
             st.caption("No transcript yet. Record your answer, then click Stop.")
 
-    # ---- CAMERA (gated by media_mode) ----
+    # CAMERA (gated by media_mode)
     with colR:
         section_title("Camera preview", "📷")
         media_mode = st.session_state.get("media_mode") or "mic"
@@ -410,7 +388,7 @@ def render_question() -> None:
                 video_processor_factory=SimpleVideoProcessor,
             )
 
-            # Feed frames into vision aggregator if available
+            # Feed frames into vision aggregator
             if vision_available and video_ctx and video_ctx.state.playing and video_ctx.video_processor:
                 frame = video_ctx.video_processor.get_latest()
                 if frame is not None:
@@ -421,7 +399,7 @@ def render_question() -> None:
         else:
             st.caption("Camera disabled (microphone-only mode).")
 
-    # ---- TIMER (per question, auto-submit) ----
+    # TIMER (per question, auto-submit if it runs out)
     ss = st.session_state
     current_q_idx = q_idx
 
@@ -455,10 +433,7 @@ def render_question() -> None:
     if st.button("✅ Submit Answer", type="primary", use_container_width=True):
         submit_current_answer()
 
-
-# --------------------------
 # Finished page + scoring
-# --------------------------
 def render_finished() -> None:
     st.title("🏁 Interview complete")
 
@@ -493,10 +468,7 @@ def render_finished() -> None:
         st.session_state.vision = VisionAggregator()
         st.rerun()
 
-
-# --------------------------
 # Router
-# --------------------------
 stage = st.session_state.stage
 if stage == "setup":
     render_setup()
