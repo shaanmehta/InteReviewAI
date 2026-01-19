@@ -1,4 +1,3 @@
-# interview/engine.py
 from __future__ import annotations
 
 import base64
@@ -12,15 +11,10 @@ from openai import OpenAI
 from interview.config import settings
 from interview.prompts import SCORER_SYSTEM_PROMPT
 
-
-# -----------------------
 # TTS (AI speaks)
-# -----------------------
 def tts_autoplay_html(client: OpenAI, text: str) -> str:
-    """
-    Returns audio HTML with autoplay + controls.
-    Controls are critical because Safari often blocks autoplay unless user interacts.
-    """
+
+    # Returns audio HTML with autoplay + controls.
     def _read_audio_bytes(obj: Any) -> bytes:
         if hasattr(obj, "read"):
             return obj.read()
@@ -36,7 +30,7 @@ def tts_autoplay_html(client: OpenAI, text: str) -> str:
     audio_obj = None
     last_err: Optional[Exception] = None
 
-    # Try response_format first (newer SDKs)
+    # Try response_format first
     try:
         audio_obj = client.audio.speech.create(
             model=settings.tts_model,
@@ -65,7 +59,6 @@ def tts_autoplay_html(client: OpenAI, text: str) -> str:
     b64 = base64.b64encode(mp3_bytes).decode("utf-8")
 
     # controls + autoplay + JS play attempt
-    # (JS helps on Chrome; Safari still may require user click, but controls are visible)
     return f"""
     <audio id="q_audio" autoplay controls style="width:100%; max-width:560px;">
       <source src="data:audio/mpeg;base64,{b64}" type="audio/mpeg">
@@ -82,10 +75,7 @@ def tts_autoplay_html(client: OpenAI, text: str) -> str:
     </script>
     """
 
-
-# -----------------------
 # STT (user speaks)
-# -----------------------
 def transcribe_audio_bytes(client: OpenAI, pcm16_bytes: bytes) -> str:
     """
     Takes 16kHz mono PCM16 bytes and transcribes reliably on modern OpenAI SDK:
@@ -102,7 +92,7 @@ def transcribe_audio_bytes(client: OpenAI, pcm16_bytes: bytes) -> str:
         wf.writeframes(pcm16_bytes)
     wav_buf.seek(0)
 
-    # OpenAI SDK expects file-like; name helps content-type inference
+    # OpenAI SDK expects file-like
     wav_buf.name = "audio.wav"  # type: ignore[attr-defined]
 
     try:
@@ -127,8 +117,7 @@ def summarize_voice_stats(pcm16_bytes: bytes) -> Dict[str, Any]:
         "note": "Heuristics only (add VAD/pitch later).",
     }
 
-
-from typing import Any, Dict, List, Optional  # make sure Optional is imported
+from typing import Any, Dict, List, Optional
 
 def score_full_interview(
     client: OpenAI,
@@ -137,13 +126,11 @@ def score_full_interview(
     qa_history: Optional[List[Dict[str, Any]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """
-    Score the full interview.
 
-    - `qa` was the original transcript argument (list of Q/A dicts).
-    - `qa_history` is optionally passed by the app as a keyword.
-    We accept both and prefer `qa_history` if provided.
-    """
+    # Score the full interview.
+
+    # - "qa" is original transcript argument
+    # - "qa_history" is optionally passed by the app as a keyword
 
     # Prefer qa_history if provided, otherwise fall back to qa.
     if qa_history is not None:
@@ -157,10 +144,7 @@ def score_full_interview(
         "note": "voice/face stats are heuristics; treat cautiously.",
     }
 
-    # ... keep the rest of your existing code below this line unchanged ...
-
-
-    # Don't force response_format here; some accounts/models reject it.
+    # Don't force response_format here
     resp = client.chat.completions.create(
         model=settings.model,
         messages=[
