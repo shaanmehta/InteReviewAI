@@ -1,4 +1,3 @@
-# interview/config.py
 from __future__ import annotations
 
 import os
@@ -11,10 +10,8 @@ from openai import OpenAI
 
 
 def ensure_env_loaded() -> None:
-    """
-    Load .env early and deterministically (Streamlit can change CWD).
-    Important: must run BEFORE settings are constructed.
-    """
+
+    # Load .env early
     project_root = Path(__file__).resolve().parent.parent  # repo root
     env_path = project_root / ".env"
     if env_path.exists():
@@ -23,7 +20,7 @@ def ensure_env_loaded() -> None:
         load_dotenv(override=False)
 
 
-# ✅ Load env FIRST so settings reads correct model names
+# Load env first so settings reads correct model names
 ensure_env_loaded()
 
 
