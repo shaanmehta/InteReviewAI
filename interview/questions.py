@@ -1,4 +1,3 @@
-# interview/questions.py
 from __future__ import annotations
 
 from typing import Dict, Any, List
@@ -14,7 +13,7 @@ def _build_interviewer_messages(
     question_idx: int,
     n_questions: int,
 ) -> list[dict]:
-    # Provide context compactly
+    # Provide context
     history_lines = []
     for i, item in enumerate(qa_history, start=1):
         q = item.get("q", "").strip()
@@ -63,7 +62,6 @@ def generate_next_question(
     )
     text = resp.choices[0].message.content.strip()
 
-    # Defensive cleanup
     text = text.strip().strip('"').strip()
     if len(text) > 240:
         # keep it spoken-friendly
