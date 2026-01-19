@@ -1,9 +1,4 @@
-# interview/scoring.py
-"""
-Kept for backwards compatibility.
-In the new flow, scoring is done once at the end (see interview/engine.py).
-You can still use these helpers to aggregate numeric sub-scores later.
-"""
+# New version just does all the scoring at the end (in engine.py)
 
 from __future__ import annotations
 from typing import Dict, Any, List, Optional
